@@ -2,6 +2,7 @@
 from flask import Flask, request, render_template_string
 import sqlite3
 import os
+import subprocess
  
 app = Flask(__name__)
  
@@ -26,9 +27,11 @@ def search():
  
 @app.route("/rce")
 def rce():
-    # --- Vulnerable: Remote Code Execution ---
-    cmd = request.args.get("cmd")
-    output = os.popen(cmd).read()  # ❌ executes arbitrary commands
+    # --- Mitigated: Uses allowlist to prevent arbitrary code execution ---
+    cmd_key = request.args.get("cmd")
+    if cmd_key not in ALLOWED_COMMANDS:
+        return "<pre>Invalid command</pre>", 400
+    output = subprocess.run(ALLOWED_COMMANDS[cmd_key], capture_output=True, text=True).stdout
     return f"<pre>{output}</pre>"
  
 @app.route("/xss")
